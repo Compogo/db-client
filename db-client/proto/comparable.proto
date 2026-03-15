@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package database;
+
+option go_package = "github.com/Compogo/db-client/proto";
+
+enum Comparable {
+  Eq = 0;
+  Neq = 1;
+  Gt = 2;
+  Gte = 3;
+  Lt = 4;
+  Lte = 5;
+  LIKE = 6;
+  IN = 7;
+}

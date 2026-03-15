@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package database;
+
+option go_package = "github.com/Compogo/db-client/proto";
+
+import "db-client/proto/sort_direction.proto";
+import "db-client/proto/comparable.proto";
+
+message Page {
+  uint64 Number = 1;
+  uint32 Limit = 2;
+}
+
+message Sort {
+  string ColumnName = 1;
+  SortDirection Direction = 2;
+}
+
+message Filter {
+  string ColumnName = 1;
+  string Value = 2;
+  Comparable Comparable = 3;
+}
+
+message Request {
+  Page Page = 1;
+  repeated Sort Sorts = 2;
+  repeated Filter Filters = 3;
+}
