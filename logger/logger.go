@@ -5,19 +5,20 @@ import (
 	"database/sql"
 
 	"github.com/Compogo/compogo/logger"
-	dbClient "github.com/Compogo/db-client"
+	"github.com/Compogo/db-client/client"
+	"github.com/Compogo/db-client/driver"
 )
 
 // Logger decorates any dbClient.Client with query logging.
 // All database operations are logged at DEBUG level, showing the query
 // and its arguments. This is useful for debugging and monitoring.
 type Logger struct {
-	dbClient.Client
+	client.Client
 
 	logger logger.Logger
 }
 
-func NewLogger(client dbClient.Client, logger logger.Logger) *Logger {
+func NewLogger(client client.Client, logger logger.Logger) *Logger {
 	return &Logger{Client: client, logger: logger}
 }
 
@@ -67,6 +68,6 @@ func (l *Logger) SQL() *sql.DB {
 	return l.Client.SQL()
 }
 
-func (l *Logger) Driver() dbClient.Driver {
+func (l *Logger) Driver() driver.Driver {
 	return l.Client.Driver()
 }

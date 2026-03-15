@@ -9,7 +9,8 @@ import (
 	"sync"
 	"time"
 
-	dbClient "github.com/Compogo/db-client"
+	"github.com/Compogo/db-client/client"
+	driver2 "github.com/Compogo/db-client/driver"
 	"github.com/Compogo/types/counter"
 )
 
@@ -17,7 +18,7 @@ import (
 // It tracks consecutive errors and blocks requests for a duration when
 // the error limit is reached. After the duration, it allows requests again.
 type Limiter struct {
-	dbClient.Client
+	client.Client
 
 	counter counter.Counter
 	limit   int64
@@ -27,7 +28,7 @@ type Limiter struct {
 	m        sync.Mutex
 }
 
-func NewLimiter(client dbClient.Client, limit int64, duration time.Duration) *Limiter {
+func NewLimiter(client client.Client, limit int64, duration time.Duration) *Limiter {
 	return &Limiter{Client: client, limit: limit, duration: duration, counter: counter.NewCounter()}
 }
 
@@ -142,12 +143,12 @@ func (l *Limiter) ExecContext(ctx context.Context, s string, i ...interface{}) (
 	return result, err
 }
 
-func (l *Limiter) SQL() *sql.DB {
-	return l.Client.SQL()
+func (l *Limiter) Driver() driver2.Driver {
+	return l.Client.Driver()
 }
 
-func (l *Limiter) Driver() dbClient.Driver {
-	return l.Client.Driver()
+func (l *Limiter) SQL() *sql.DB {
+	return l.Client.SQL()
 }
 
 func (l *Limiter) timeoutProcess() (err error) {

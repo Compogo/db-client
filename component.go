@@ -7,6 +7,7 @@ import (
 	"github.com/Compogo/compogo/component"
 	"github.com/Compogo/compogo/container"
 	"github.com/Compogo/compogo/flag"
+	"github.com/Compogo/db-client/client"
 )
 
 // Component is a ready-to-use Compogo component that provides a database client.
@@ -33,6 +34,7 @@ var Component = &component.Component{
 		return container.Provides(
 			NewConfig,
 			NewClient,
+			func(client client.Client) Client { return client },
 		)
 	}),
 	BindFlags: component.BindFlags(func(flagSet flag.FlagSet, container container.Container) error {
