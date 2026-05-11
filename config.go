@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Compogo/compogo/configurator"
-	"github.com/Compogo/db-client/driver"
 )
 
 const (
@@ -17,8 +16,7 @@ var (
 )
 
 type Config struct {
-	driver string
-	Driver driver.Driver
+	Driver string
 }
 
 func NewConfig() *Config {
@@ -26,21 +24,18 @@ func NewConfig() *Config {
 }
 
 func Configuration(config *Config, configurator configurator.Configurator) (*Config, error) {
-	if config.driver == "" || config.driver == DriverDefault {
+	if config.Driver == "" || config.Driver == DriverDefault {
 		configurator.SetDefault(DriverFieldName, DriverDefault)
-		config.driver = configurator.GetString(DriverFieldName)
+		config.Driver = configurator.GetString(DriverFieldName)
 	}
 
-	if config.driver == "" {
+	if config.Driver == "" {
 		return nil, errors.New("[db.client] driver is not set")
 	}
 
-	d, err := drivers.Get(config.driver)
-	if err != nil {
-		return nil, fmt.Errorf("[db.client] driver '%s' get failed: %w", config.driver, err)
+	if !drivers.Has(config.Driver) {
+		return nil, fmt.Errorf("[db.client] driver '%s' unknown", config.Driver)
 	}
-
-	config.Driver = d
 
 	return config, nil
 }

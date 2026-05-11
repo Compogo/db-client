@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package database;
+package compogo.database.repository;
 
-option go_package = "github.com/Compogo/db-client/proto";
+option go_package = "github.com/Compogo/db-client/protobuf/repository";
 
 enum Comparable {
   Eq = 0;

@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-package database;
+package compogo.database.repository;
 
-option go_package = "github.com/Compogo/db-client/proto";
+option go_package = "github.com/Compogo/db-client/protobuf/repository";
 
-import "db-client/proto/sort_direction.proto";
-import "db-client/proto/comparable.proto";
+import "github.com/Compogo/db-client/repository/comparable.proto";
+import "github.com/Compogo/db-client/repository/sort_direction.proto";
 
 message Page {
   uint64 Number = 1;

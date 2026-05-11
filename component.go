@@ -44,10 +44,15 @@ var Component = &component.Component{
 				DriverDefault = allDrivers[0]
 			}
 
-			flagSet.StringVar(&config.driver, DriverFieldName, DriverDefault, fmt.Sprintf("db client driver. Available drivers: [%s]", strings.Join(allDrivers, ",")))
+			flagSet.StringVar(&config.Driver, DriverFieldName, DriverDefault, fmt.Sprintf("db client driver. Available drivers: [%s]", strings.Join(allDrivers, ",")))
 		})
 	}),
 	Configuration: component.StepFunc(func(container container.Container) error {
 		return container.Invoke(Configuration)
+	}),
+	Stop: component.StepFunc(func(container container.Container) error {
+		return container.Invoke(func(c Client) error {
+			return c.Close()
+		})
 	}),
 }

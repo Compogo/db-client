@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/Compogo/db-client/client"
-	driver2 "github.com/Compogo/db-client/driver"
 	"github.com/Compogo/types/counter"
 )
 
@@ -143,8 +142,8 @@ func (l *Limiter) ExecContext(ctx context.Context, s string, i ...interface{}) (
 	return result, err
 }
 
-func (l *Limiter) Driver() driver2.Driver {
-	return l.Client.Driver()
+func (l *Limiter) DriverName() string {
+	return l.Client.DriverName()
 }
 
 func (l *Limiter) SQL() *sql.DB {
@@ -164,6 +163,6 @@ func (l *Limiter) timeoutProcess() (err error) {
 		l.timer = nil
 		return nil
 	default:
-		return fmt.Errorf("[db-client.limiter] driver '%s' error: %w", l.Driver(), driver.ErrBadConn)
+		return fmt.Errorf("[db-client.limiter] driver '%s' error: %w", l.DriverName(), driver.ErrBadConn)
 	}
 }

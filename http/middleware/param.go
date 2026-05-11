@@ -84,38 +84,38 @@ const (
 var (
 	// SortDirectionToQuerySort maps repository.SortDirection to query string values.
 	SortDirectionToQuerySort = linker.NewLinker[repository.SortDirection, string](
-		linker.NewLink(repository.ASC, SortDirectionAsc),
-		linker.NewLink(repository.DESC, SortDirectionDesc),
+		linker.Link(repository.ASC, SortDirectionAsc),
+		linker.Link(repository.DESC, SortDirectionDesc),
 	)
 
 	// QuerySortToSortDirection maps query string values to repository.SortDirection.
 	QuerySortToSortDirection = linker.NewLinker[string, repository.SortDirection](
-		linker.NewLink(strings.ToLower(SortDirectionAsc), repository.ASC),
-		linker.NewLink(strings.ToLower(SortDirectionDesc), repository.DESC),
+		linker.Link(strings.ToLower(SortDirectionAsc), repository.ASC),
+		linker.Link(strings.ToLower(SortDirectionDesc), repository.DESC),
 	)
 
 	// ComparableToComparableQuery maps repository.Comparable to query string operators.
 	ComparableToComparableQuery = linker.NewLinker[repository.Comparable, string](
-		linker.NewLink(repository.Eq, FilterEq),
-		linker.NewLink(repository.Neq, FilterNeq),
-		linker.NewLink(repository.Gt, FilterGt),
-		linker.NewLink(repository.Gte, FilterGte),
-		linker.NewLink(repository.Lt, FilterLt),
-		linker.NewLink(repository.Lte, FilterLte),
-		linker.NewLink(repository.LIKE, FilterLIKE),
-		linker.NewLink(repository.IN, FilterIN),
+		linker.Link(repository.Eq, FilterEq),
+		linker.Link(repository.Neq, FilterNeq),
+		linker.Link(repository.Gt, FilterGt),
+		linker.Link(repository.Gte, FilterGte),
+		linker.Link(repository.Lt, FilterLt),
+		linker.Link(repository.Lte, FilterLte),
+		linker.Link(repository.LIKE, FilterLIKE),
+		linker.Link(repository.IN, FilterIN),
 	)
 
 	// QueryComparableToComparable maps query string operators to repository.Comparable.
 	QueryComparableToComparable = linker.NewLinker[string, repository.Comparable](
-		linker.NewLink(FilterEq, repository.Eq),
-		linker.NewLink(FilterNeq, repository.Neq),
-		linker.NewLink(FilterGt, repository.Gt),
-		linker.NewLink(FilterGte, repository.Gte),
-		linker.NewLink(FilterLt, repository.Lt),
-		linker.NewLink(FilterLte, repository.Lte),
-		linker.NewLink(FilterLIKE, repository.LIKE),
-		linker.NewLink(FilterIN, repository.IN),
+		linker.Link(FilterEq, repository.Eq),
+		linker.Link(FilterNeq, repository.Neq),
+		linker.Link(FilterGt, repository.Gt),
+		linker.Link(FilterGte, repository.Gte),
+		linker.Link(FilterLt, repository.Lt),
+		linker.Link(FilterLte, repository.Lte),
+		linker.Link(FilterLIKE, repository.LIKE),
+		linker.Link(FilterIN, repository.IN),
 	)
 )
 

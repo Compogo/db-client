@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"io"
-
-	"github.com/Compogo/db-client/driver"
 )
 
 // Client defines the interface for database operations.
@@ -21,5 +19,5 @@ type Client interface {
 	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
 	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
 	SQL() *sql.DB
-	Driver() driver.Driver
+	DriverName() string
 }

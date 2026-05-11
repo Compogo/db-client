@@ -15,7 +15,7 @@ type Client client.Client
 // and returns the created client. Returns an error if the driver or its getter
 // is not found, or if client creation fails.
 func NewClient(config *Config, container container.Container, logger logger.Logger) (client.Client, error) {
-	getter, err := getters.Get(config.Driver)
+	getter, err := drivers.Get(config.Driver)
 	if err != nil {
 		return nil, fmt.Errorf("[db-client] driver '%s' getter undefined: %w", config.Driver, err)
 	}
