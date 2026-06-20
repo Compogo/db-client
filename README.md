@@ -1,72 +1,162 @@
-# Compogo DB Client 💾
+# Compogo DB Client
 
-**Compogo DB Client** — это гибкий и расширяемый клиент для работы с базами данных, построенный на принципах плагинной архитектуры. Позволяет подключать различные драйверы (PostgreSQL, MySQL, SQLite и др.) через единый интерфейс, добавлять функциональность через декораторы и полностью интегрируется с жизненным циклом Compogo.
+[![Go Reference](https://pkg.go.dev/badge/github.com/Compogo/db-client.svg)](https://pkg.go.dev/github.com/Compogo/db-client)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🚀 Установка
+Плагинная система для работы с базами данных в фреймворке [Compogo](https://github.com/Compogo/compogo).
 
-```bash
+Предоставляет:
+
+* Единый интерфейс для работы с любой БД (MySQL, PostgreSQL, SQLite)
+* Плагинную систему драйверов
+* Логирование всех SQL-запросов
+* Лимитер для защиты от ошибок соединения
+* Middleware для пагинации, сортировки и фильтрации
+
+## Установка
+
+```shell
 go get github.com/Compogo/db-client
 ```
 
-### 📦 Быстрый старт
+## Быстрый старт
 
 ```go
 package main
 
 import (
+    "context"
     "github.com/Compogo/compogo"
     "github.com/Compogo/db-client"
-    _ "github.com/Compogo/postgres" // импортируем нужный драйвер
 )
 
 func main() {
     app := compogo.NewApp("myapp",
-        compogo.WithOsSignalCloser(),
-        db_client.Component, // базовый компонент БД
-        compogo.WithComponents(
-            userRepositoryComponent,
-        ),
+        compogo.WithComponents(&db_client.Component),
     )
+
+    app.AddComponents(&compogo.Component{
+        Name: "user_service",
+        Init: compogo.StepFunc(func(container compogo.Container) error {
+            return container.Invoke(func(client db_client.Client) error {
+                rows, err := client.Query("SELECT * FROM users WHERE active = ?", true)
+                if err != nil {
+                    return err
+                }
+                defer rows.Close()
+                // обработка rows
+                return nil
+            })
+        }),
+    })
 
     if err := app.Serve(); err != nil {
         panic(err)
     }
 }
-
-// Компонент, использующий БД
-var userRepositoryComponent = &component.Component{
-    Dependencies: component.Components{db_client.Component},
-    Execute: component.StepFunc(func(c container.Container) error {
-        return c.Invoke(func(db db_client.Client) {
-            // db готов к работе
-            rows, _ := db.Query("SELECT * FROM users")
-            defer rows.Close()
-            // ...
-        })
-    }),
-}
 ```
 
-### ✨ Возможности
-
-#### 🎯 Плагинная архитектура драйверов
-
-Любой драйвер регистрируется одной строкой и автоматически становится доступным:
+## Использование
 
 ```go
-// В драйвере postgres
-func init() {
-    db_client.Registration(Postgres, NewPostgresClient)
+import (
+    "github.com/Compogo/db-client"
+)
+
+func main() {
+    app := compogo.NewApp("myapp",
+        compogo.WithComponents(&db_client.Component),
+    )
 }
 ```
 
-Выбор драйвера через флаг:
+## Конфигурация через флаги
 
-```bash
-./myapp --db.driver=postgres
+```shell
+# Выбор драйвера (автоматически подставляет доступные)
+--db.driver=mysql
 ```
 
-#### 🔌 Единый интерфейс Client
+## Логирование запросов
+
+```go
+// Автоматически логирует все запросы на уровне Debug
+// [Database][mysql] query: SELECT * FROM users; args: [true]
+```
+
+## Лимитер ошибок соединения
+
+```go
+// Автоматически ограничивает количество ошибок соединения
+// При превышении лимита переходит в режим ожидания
+```
+
+## Repository
+
+### Интерфейсы для работы с данными
+
+```go
+// Постраничное получение
+type Pager[T any] interface {
+    Page(context.Context, *Page, []*Sort, ...*Filter) ([]T, error)
+}
+
+// Подсчёт количества
+type Counter interface {
+    Count(context.Context, ...*Filter) (uint64, error)
+}
+
+// Сохранение (Insert или Update)
+type Saver[T any] interface {
+    Save(context.Context, T) (T, error)
+}
+
+// Вставка
+type Inserter[T any] interface {
+    Insert(context.Context, T) (T, error)
+}
+
+// Обновление
+type Updater[T any] interface {
+    Update(context.Context, T) (T, error)
+}
+
+// Удаление
+type Deleter interface {
+    Delete(context.Context, ...*Filter) error
+}
+
+// Поиск
+type Finder[T any] interface {
+    Find(context.Context, ...*Filter) ([]T, error)
+}
+
+// Массовая вставка
+type BulkInserter[T any] interface {
+    BulkInsert(context.Context, ...T) error
+}
+```
+
+### Middleware для пагинации
+
+```go
+import "github.com/Compogo/db-client/middleware"
+
+// Использование в роутере
+router.Use(
+    middleware.NewPage(logger),      // извлекает номер страницы
+    middleware.NewPaginationLimit(logger), // извлекает лимит
+    middleware.NewSort(logger, defaultSort, "id", "name", "created_at"), // сортировка
+    middleware.NewFilter(logger, "name", "age", "active"), // фильтрация
+)
+
+// Формат сортировки: ?sort=name:asc;created_at:desc
+// Формат фильтрации: ?filter=name:john:LKE;age:18:Gt
+```
+
+## API
+
+### Client
 
 ```go
 type Client interface {
@@ -78,101 +168,71 @@ type Client interface {
     QueryRowContext(context.Context, string, ...interface{}) *sql.Row
     ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
     SQL() *sql.DB
-    Driver() Driver
+    DriverName() string
 }
 ```
 
-Полностью совместим со стандартным `database/sql`.
-
-### 🎨 Декораторы (паттерн Decorator)
-
-Добавляйте функциональность, не изменяя основной код:
-
-#### Логирование запросов
+### Config
 
 ```go
-import "github.com/Compogo/db-client/logger"
-
-db = &logger.Logger{Client: db, logger: logger}
-// Все запросы теперь логируются на уровне DEBUG
-```
-
-#### Circuit Breaker (защита от сбоев)
-
-```go
-import "github.com/Compogo/db-client/connection"
-
-db = connection.NewLimiter(db, 5, 5*time.Second)
-// После 5 ошибок подряд — 5 секунд "тишины"
-```
-### Пример драйвера (postgres)
-
-```go
-var Component = &component.Component{
-    Init: component.StepFunc(func(c container.Container) error {
-        return container.Provides(
-            NewConfig,
-            NewClient,
-        )
-    }),
-    // ... другие шаги
-}
-
-func init() {
-    db_client.Registration(Postgres, NewClientFromContainer)
+type Config struct {
+    Driver string // имя драйвера БД
 }
 ```
 
-### Репозиторий с Circuit Breaker и логгированием
+### Repository
 
 ```go
-type UserRepository struct {
-    db db_client.Client
+type Comparable uint8 // Eq, Neq, Gt, Gte, Lt, Lte, LIKE, IN
+
+type SortDirection uint8 // ASC, DESC
+
+type Page struct {
+    Number uint64
+    Limit  uint64
 }
 
-func NewUserRepository(db db_client.Client) *UserRepository {
-    // Оборачиваем клиент
-    db = &logger.Logger{Client: db, logger: logger}
-    db = connection.NewLimiter(db, 3, 10*time.Second)
-    
-    return &UserRepository{db: db}
+type Sort struct {
+    ColumnName string
+    Direction  SortDirection
 }
 
-func (r *UserRepository) GetUser(ctx context.Context, id int) (*User, error) {
-    row := r.db.QueryRowContext(ctx, "SELECT id, name FROM users WHERE id = $1", id)
-    var user User
-    err := row.Scan(&user.ID, &user.Name)
-    return &user, err
+type Filter struct {
+    ColumnName string
+    Value      string
+    Comparable Comparable
 }
 ```
 
-### 🔧 Создание своего драйвера
+## Зависимости
 
-```go
-const Postgres db_client.Driver = "postgres"
+* [Compogo](https://github.com/Compogo/compogo) — основной фреймворк
+* [Compogo Runner](https://github.com/Compogo/runner) — для Limiter
+* [database/sql](https://pkg.go.dev/database/sql) — стандартная библиотека
 
-type postgresClient struct {
-    db *sql.DB
-    // ...
-}
+## Лицензия
 
-func NewPostgresClient(container container.Container) (db_client.Client, error) {
-    // достаём конфиг из контейнера
-    var config *Config
-    if err := container.Invoke(func(cfg *Config) { config = cfg }); err != nil {
-        return nil, err
-    }
-    
-    // создаём подключение
-    db, err := sql.Open(Postgres.String(), config.DSN)
-    if err != nil {
-        return nil, err
-    }
-    
-    return &postgresClient{db: db}, nil
-}
+```plantuml
+MIT License
 
-func init() {
-    db_client.Registration(Postgres, NewPostgresClient)
-}
+Copyright (c) 2026 Compogo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ```

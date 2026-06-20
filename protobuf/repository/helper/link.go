@@ -7,16 +7,19 @@ import (
 )
 
 var (
+	// SortDirectionLinkProtoSortDirection Связь между repository.SortDirection и protobuf.SortDirection.
 	SortDirectionLinkProtoSortDirection = linker.NewLinker[repository.SortDirection, protobuf.SortDirection](
 		linker.Link(repository.ASC, protobuf.SortDirection_ASC),
 		linker.Link(repository.DESC, protobuf.SortDirection_DESC),
 	)
 
+	// ProtoSortDirectionLinkSortDirection Связь между protobuf.SortDirection и repository.SortDirection.
 	ProtoSortDirectionLinkSortDirection = linker.NewLinker[protobuf.SortDirection, repository.SortDirection](
 		linker.Link(protobuf.SortDirection_ASC, repository.ASC),
 		linker.Link(protobuf.SortDirection_DESC, repository.DESC),
 	)
 
+	// ComparableLinkProtoComparable Связь между repository.Comparable и protobuf.Comparable.
 	ComparableLinkProtoComparable = linker.NewLinker[repository.Comparable, protobuf.Comparable](
 		linker.Link(repository.Eq, protobuf.Comparable_Eq),
 		linker.Link(repository.Neq, protobuf.Comparable_Neq),
@@ -28,6 +31,7 @@ var (
 		linker.Link(repository.IN, protobuf.Comparable_IN),
 	)
 
+	// ProtoComparableLinkComparable Связь между protobuf.Comparable и repository.Comparable.
 	ProtoComparableLinkComparable = linker.NewLinker[protobuf.Comparable, repository.Comparable](
 		linker.Link(protobuf.Comparable_Eq, repository.Eq),
 		linker.Link(protobuf.Comparable_Neq, repository.Neq),

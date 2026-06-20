@@ -4,97 +4,101 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Compogo/compogo/logger"
+	"github.com/Compogo/compogo"
 	"github.com/Compogo/db-client/repository"
-	"github.com/Compogo/http"
-	"github.com/Compogo/http/middleware/param"
+	httpServer "github.com/Compogo/http_server"
+	"github.com/Compogo/http_server/middleware/param"
 	"github.com/Compogo/types/linker"
 	"github.com/Compogo/types/set"
 	"github.com/spf13/cast"
 )
 
 const (
-	// PageFieldName is the query parameter name for page number.
+	// PageFieldName - имя поля для номера страницы
 	PageFieldName = "page"
 
-	// LimitFieldName is the query parameter name for items per page.
+	// LimitFieldName - имя поля для лимита
 	LimitFieldName = "limit"
 
-	// SortFieldName is the query parameter name for sorting.
+	// SortFieldName - имя поля для сортировки
 	SortFieldName = "sort"
 
-	// FilterFieldName is the query parameter name for filtering.
+	// FilterFieldName - имя поля для фильтрации
 	FilterFieldName = "filter"
 
-	// CountHeaderName is the HTTP header for total item count.
+	// CountHeaderName - заголовок с общим количеством
 	CountHeaderName = "X-Pagination-Count"
 
-	// PageHeaderName is the HTTP header for current page number.
+	// PageHeaderName - заголовок с номером страницы
 	PageHeaderName = "X-Pagination-Page"
 
-	// LimitHeaderName is the HTTP header for items per page.
+	// LimitHeaderName - заголовок с лимитом
 	LimitHeaderName = "X-Pagination-Limit"
 
-	// SortHeaderName is the HTTP header for sorting parameters.
+	// SortHeaderName - заголовок с сортировкой
 	SortHeaderName = "X-Pagination-Sort"
 
-	// FilterHeaderName is the HTTP header for filter parameters.
+	// FilterHeaderName - заголовок с фильтрацией
 	FilterHeaderName = "X-Pagination-Filter"
 
-	// LimitDefault is the default items per page.
-	LimitDefault = uint8(20)
+	// LimitDefault - лимит по умолчанию
+	LimitDefault = uint64(20)
 
-	// PageDefault is the default page number.
-	PageDefault = uint32(1)
+	// PageDefault - страница по умолчанию
+	PageDefault = uint64(1)
 
-	// SortDirectionAsc is the string representation of ascending sort.
+	// SortDirectionAsc - сортировка по возрастанию
 	SortDirectionAsc = "ASC"
 
-	// SortDirectionDesc is the string representation of descending sort.
+	// SortDirectionDesc - сортировка по убыванию
 	SortDirectionDesc = "DESC"
 
-	// FilterEq is the string representation of equality operator.
+	// FilterEq - равно
 	FilterEq = "EQ"
 
-	// FilterNeq is the string representation of not equal operator.
+	// FilterNeq - не равно
 	FilterNeq = "Neq"
 
-	// FilterGt is the string representation of greater than operator.
+	// FilterGt - больше
 	FilterGt = "Gt"
 
-	// FilterGte is the string representation of greater than or equal operator.
+	// FilterGte - больше или равно
 	FilterGte = "Gte"
 
-	// FilterLt is the string representation of less than operator.
+	// FilterLt - меньше
 	FilterLt = "Lt"
 
-	// FilterLte is the string representation of less than or equal operator.
+	// FilterLte - меньше или равно
 	FilterLte = "Lte"
 
-	// FilterLIKE is the string representation of LIKE operator.
+	// FilterLIKE - LIKE
 	FilterLIKE = "LIKE"
 
-	// FilterIN is the string representation of IN operator.
+	// FilterIN - IN
 	FilterIN = "IN"
 
+	// itemSeparator разделитель элементов в строке
 	itemSeparator = ";"
+
+	// pairSeparator разделитель ключ-значение в элементе
 	pairSeparator = ":"
 )
 
 var (
-	// SortDirectionToQuerySort maps repository.SortDirection to query string values.
+	// SortDirectionToQuerySort Связь между repository.SortDirection и строковым представлением.
 	SortDirectionToQuerySort = linker.NewLinker[repository.SortDirection, string](
 		linker.Link(repository.ASC, SortDirectionAsc),
 		linker.Link(repository.DESC, SortDirectionDesc),
 	)
 
-	// QuerySortToSortDirection maps query string values to repository.SortDirection.
+	// QuerySortToSortDirection Связь между строковым представлением и repository.SortDirection.
 	QuerySortToSortDirection = linker.NewLinker[string, repository.SortDirection](
 		linker.Link(strings.ToLower(SortDirectionAsc), repository.ASC),
 		linker.Link(strings.ToLower(SortDirectionDesc), repository.DESC),
+		linker.KeyStringNormalizer[repository.SortDirection](),
 	)
 
-	// ComparableToComparableQuery maps repository.Comparable to query string operators.
+	// ComparableToComparableQuery Связь между repository.Comparable и строковым представлением.
 	ComparableToComparableQuery = linker.NewLinker[repository.Comparable, string](
 		linker.Link(repository.Eq, FilterEq),
 		linker.Link(repository.Neq, FilterNeq),
@@ -106,7 +110,7 @@ var (
 		linker.Link(repository.IN, FilterIN),
 	)
 
-	// QueryComparableToComparable maps query string operators to repository.Comparable.
+	// QueryComparableToComparable Связь между строковым представлением и repository.Comparable.
 	QueryComparableToComparable = linker.NewLinker[string, repository.Comparable](
 		linker.Link(FilterEq, repository.Eq),
 		linker.Link(FilterNeq, repository.Neq),
@@ -116,20 +120,13 @@ var (
 		linker.Link(FilterLte, repository.Lte),
 		linker.Link(FilterLIKE, repository.LIKE),
 		linker.Link(FilterIN, repository.IN),
+		linker.KeyStringNormalizer[repository.Comparable](),
 	)
 )
 
-// NewSort creates middleware that parses sort parameters into []*repository.Sort.
-// The sort parameter format is: "column:direction;column:direction"
-// Example: "created_at:ASC;name:DESC"
-//
-// Parameters:
-//   - logger: for logging parsing errors
-//   - defaultSort: fallback sort when none is provided
-//   - columns: list of allowed column names for security
-//
-// The parsed value is stored in request context under "sort".
-func NewSort(logger logger.Logger, defaultSort *repository.Sort, columns ...string) http.Middleware {
+// NewSort создаёт middleware для извлечения сортировки из запроса.
+// Поддерживает формат: "column:asc;column2:desc"
+func NewSort(logger compogo.Logger, defaultSort *repository.Sort, columns ...string) httpServer.Middleware {
 	allowedColumns := set.NewSet[string](columns...)
 
 	return param.NewParam(
@@ -148,16 +145,16 @@ func NewSort(logger logger.Logger, defaultSort *repository.Sort, columns ...stri
 			for i, pair := range pairs {
 				values := strings.SplitN(pair, pairSeparator, 2)
 				if len(values) != 2 {
-					return nil, fmt.Errorf("[PaginationSort] sort invalid pair %s", pair)
+					return nil, fmt.Errorf("[Pagination][Sort] sort invalid pair %s", pair)
 				}
 
 				if !allowedColumns.Contains(values[0]) {
-					return nil, fmt.Errorf("[PaginationSort] sort invalid column %s", values[0])
+					return nil, fmt.Errorf("[Pagination][Sort] sort invalid column %s", values[0])
 				}
 
-				sortDirection, err := QuerySortToSortDirection.Get(strings.ToLower(values[1]))
+				sortDirection, err := QuerySortToSortDirection.Get(values[1])
 				if err != nil {
-					return nil, fmt.Errorf("[PaginationSort] invalid sort direction %s", values[1])
+					return nil, fmt.Errorf("[Pagination][Sort] invalid sort direction %s", values[1])
 				}
 
 				sorts[i] = repository.NewSort(sort, sortDirection)
@@ -171,16 +168,9 @@ func NewSort(logger logger.Logger, defaultSort *repository.Sort, columns ...stri
 	)
 }
 
-// NewFilter creates middleware that parses filter parameters into []*repository.Filter.
-// The filter format is: "column:value:operator;column:value:operator"
-// Example: "age:25:Gt;status:active:Eq"
-//
-// Parameters:
-//   - logger: for logging parsing errors
-//   - columns: list of allowed column names for security
-//
-// The parsed value is stored in request context under "filter".
-func NewFilter(logger logger.Logger, columns ...string) http.Middleware {
+// NewFilter создаёт middleware для извлечения фильтров из запроса.
+// Поддерживает формат: "column:value:EQ;column2:value2:LIKE"
+func NewFilter(logger compogo.Logger, columns ...string) httpServer.Middleware {
 	allowedColumns := set.NewSet[string](columns...)
 
 	return param.NewParam(
@@ -199,16 +189,16 @@ func NewFilter(logger logger.Logger, columns ...string) http.Middleware {
 			for i, pair := range pairs {
 				values := strings.SplitN(pair, pairSeparator, 3)
 				if len(values) != 3 {
-					return nil, fmt.Errorf("[PaginationSort] filter invalid pair %s", pair)
+					return nil, fmt.Errorf("[Pagination][Sort] filter invalid pair %s", pair)
 				}
 
 				if !allowedColumns.Contains(values[0]) {
-					return nil, fmt.Errorf("[PaginationSort] filter invalid column %s", values[0])
+					return nil, fmt.Errorf("[Pagination][Sort] filter invalid column %s", values[0])
 				}
 
-				comparable, err := QueryComparableToComparable.Get(strings.ToLower(values[2]))
+				comparable, err := QueryComparableToComparable.Get(values[2])
 				if err != nil {
-					return nil, fmt.Errorf("[PaginationSort] filter invalid comparable %s", values[2])
+					return nil, fmt.Errorf("[Pagination][Sort] filter invalid comparable %s", values[2])
 				}
 
 				filters[i] = repository.NewFilter(values[0], values[1], comparable)
@@ -222,12 +212,8 @@ func NewFilter(logger logger.Logger, columns ...string) http.Middleware {
 	)
 }
 
-// NewPage creates middleware that parses the page number parameter.
-// The page parameter is validated to be >= 1.
-//
-// The parsed value is stored in request context under "page" as uint64.
-// Default value is PageDefault (1).
-func NewPage(logger logger.Logger) http.Middleware {
+// NewPage создаёт middleware для извлечения номера страницы из запроса.
+func NewPage(logger compogo.Logger) httpServer.Middleware {
 	return param.NewParamUint64(
 		PageFieldName,
 		logger,
@@ -238,13 +224,9 @@ func NewPage(logger logger.Logger) http.Middleware {
 	)
 }
 
-// NewPaginationLimit creates middleware that parses the items per page parameter.
-// The limit parameter is validated to be >= 1.
-//
-// The parsed value is stored in request context under "limit" as uint32.
-// Default value is LimitDefault (20).
-func NewPaginationLimit(logger logger.Logger) http.Middleware {
-	return param.NewParamUint32(
+// NewPaginationLimit создаёт middleware для извлечения лимита из запроса.
+func NewPaginationLimit(logger compogo.Logger) httpServer.Middleware {
+	return param.NewParamUint64(
 		LimitFieldName,
 		logger,
 		param.WithHeaderGetterByName(LimitHeaderName),

@@ -24,7 +24,7 @@ const (
 type Page struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Number        uint64                 `protobuf:"varint,1,opt,name=Number,proto3" json:"Number,omitempty"`
-	Limit         uint32                 `protobuf:"varint,2,opt,name=Limit,proto3" json:"Limit,omitempty"`
+	Limit         uint64                 `protobuf:"varint,2,opt,name=Limit,proto3" json:"Limit,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -66,7 +66,7 @@ func (x *Page) GetNumber() uint64 {
 	return 0
 }
 
-func (x *Page) GetLimit() uint32 {
+func (x *Page) GetLimit() uint64 {
 	if x != nil {
 		return x.Limit
 	}
@@ -252,7 +252,7 @@ const file_github_com_Compogo_db_client_repository_models_proto_rawDesc = "" +
 	"4github.com/Compogo/db-client/repository/models.proto\x12\x1bcompogo.database.repository\x1a8github.com/Compogo/db-client/repository/comparable.proto\x1a<github.com/Compogo/db-client/repository/sort_direction.proto\"4\n" +
 	"\x04Page\x12\x16\n" +
 	"\x06Number\x18\x01 \x01(\x04R\x06Number\x12\x14\n" +
-	"\x05Limit\x18\x02 \x01(\rR\x05Limit\"p\n" +
+	"\x05Limit\x18\x02 \x01(\x04R\x05Limit\"p\n" +
 	"\x04Sort\x12\x1e\n" +
 	"\n" +
 	"ColumnName\x18\x01 \x01(\tR\n" +

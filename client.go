@@ -1,31 +1,49 @@
 package db_client
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
+	"io"
 
-	"github.com/Compogo/compogo/container"
-	"github.com/Compogo/compogo/logger"
-	"github.com/Compogo/db-client/client"
+	"github.com/Compogo/compogo"
 )
 
-type Client client.Client
+// Client — интерфейс для работы с БД.
+// Объединяет стандартные методы database/sql с поддержкой контекста.
+//
+// Поддерживает:
+//   - Выполнение запросов (Query, QueryRow, Exec)
+//   - Контекстные версии (QueryContext, QueryRowContext, ExecContext)
+//   - Доступ к *sql.DB для низкоуровневых операций
+//   - Graceful shutdown через io.Closer
+type Client interface {
+	io.Closer
 
-// NewClient creates a database client instance based on the configured driver.
-// It looks up the Getter for the selected driver, invokes it with the container,
-// and returns the created client. Returns an error if the driver or its getter
-// is not found, or if client creation fails.
-func NewClient(config *Config, container container.Container, logger logger.Logger) (client.Client, error) {
+	Query(string, ...interface{}) (*sql.Rows, error)
+	QueryRow(string, ...interface{}) *sql.Row
+	Exec(string, ...interface{}) (sql.Result, error)
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
+	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
+	SQL() *sql.DB
+	DriverName() string
+}
+
+// NewClient создаёт новый клиент БД с указанным драйвером.
+// Использует зарегистрированный Getter для создания клиента.
+func NewClient(config *Config, container compogo.Container, logger compogo.Logger) (Client, error) {
 	getter, err := drivers.Get(config.Driver)
 	if err != nil {
-		return nil, fmt.Errorf("[db-client] driver '%s' getter undefined: %w", config.Driver, err)
+		return nil, fmt.Errorf("[Database] driver '%s' getter undefined: %w", config.Driver, err)
 	}
 
 	c, err := getter(container)
 	if err != nil {
-		return nil, fmt.Errorf("[db-client] driver '%s' create failed: %w", config.Driver, err)
+		return nil, fmt.Errorf("[Database] driver '%s' create failed: %w", config.Driver, err)
 	}
 
-	logger.Infof("[db-client] usage driver - '%s'", config.Driver)
+	logger.GetLogger("Database").Infof("usage driver - '%s'", config.Driver)
 
 	return c, nil
 }

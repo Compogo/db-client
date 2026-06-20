@@ -2,35 +2,17 @@ package repository
 
 //go:generate stringer -type=Comparable
 
-// Comparable defines comparison operators for filtering database queries.
-// Each constant represents a standard SQL operator.
+// Comparable — тип сравнения для фильтров.
 const (
-	// Eq is the equality operator '='.
-	Eq Comparable = iota
-
-	// Neq is the inequality operator '!='.
-	Neq
-
-	// Gt is the greater than operator '>'.
-	Gt
-
-	// Gte is the greater than or equal operator '>='.
-	Gte
-
-	// Lt is the less than operator '<'.
-	Lt
-
-	// Lte is the less than or equal operator '<='.
-	Lte
-
-	// LIKE is the pattern matching operator 'LIKE'.
-	// Use with '%' wildcards in the value.
-	LIKE
-
-	// IN is the membership operator 'IN(...)'.
-	// The value should contain comma-separated values.
-	IN
+	Eq   Comparable = iota // равно
+	Neq                    // не равно
+	Gt                     // больше
+	Gte                    // больше или равно
+	Lt                     // меньше
+	Lte                    // меньше или равно
+	LIKE                   // LIKE (поиск по шаблону)
+	IN                     // IN (список значений)
 )
 
-// Comparable represents a comparison operator for filtering.
+// Comparable определяет операцию сравнения.
 type Comparable uint8

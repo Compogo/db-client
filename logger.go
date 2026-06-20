@@ -1,24 +1,23 @@
-package logger
+package db_client
 
 import (
 	"context"
 	"database/sql"
 
-	"github.com/Compogo/compogo/logger"
-	"github.com/Compogo/db-client/client"
+	"github.com/Compogo/compogo"
 )
 
-// Logger decorates any dbClient.Client with query logging.
-// All database operations are logged at DEBUG level, showing the query
-// and its arguments. This is useful for debugging and monitoring.
+// Logger — обёртка над Client с логированием всех запросов.
+// Логирует на уровне Debug все SQL-запросы и их аргументы.
 type Logger struct {
-	client.Client
+	Client
 
-	logger logger.Logger
+	logger compogo.Logger
 }
 
-func NewLogger(client client.Client, logger logger.Logger) *Logger {
-	return &Logger{Client: client, logger: logger.GetLogger("db").GetLogger(client.DriverName())}
+// NewLogger создаёт новый Logger для клиента БД.
+func NewLogger(client Client, logger compogo.Logger) *Logger {
+	return &Logger{Client: client, logger: logger.GetLogger("Database").GetLogger(client.DriverName())}
 }
 
 func (l *Logger) Close() error {
@@ -61,12 +60,4 @@ func (l *Logger) ExecContext(ctx context.Context, s string, i ...interface{}) (s
 	l.logger.Debugf("query: %s; args: %+v", s, i)
 
 	return l.Client.ExecContext(ctx, s, i...)
-}
-
-func (l *Logger) SQL() *sql.DB {
-	return l.Client.SQL()
-}
-
-func (l *Logger) DriverName() string {
-	return l.Client.DriverName()
 }

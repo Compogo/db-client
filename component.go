@@ -4,40 +4,28 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Compogo/compogo/component"
-	"github.com/Compogo/compogo/container"
+	"github.com/Compogo/compogo"
 	"github.com/Compogo/compogo/flag"
-	"github.com/Compogo/db-client/client"
 )
 
-// Component is a ready-to-use Compogo component that provides a database client.
-// It automatically:
-//   - Registers Config and client factory in the DI container
-//   - Adds command-line flags for driver selection
-//   - Discovers available drivers from the registry
-//   - Creates the appropriate client based on the selected driver
+// Component — компонент клиента БД для Compogo.
+// Регистрирует конфигурацию и клиент в DI-контейнере.
 //
-// Usage:
+// Пример подключения:
 //
-//	compogo.WithComponents(
-//	    db_client.Component,
-//	    // ... driver components (postgres, mysql, etc.)
-//	)
+//	app.AddComponents(&db_client.Component)
 //
-// The actual client instance can be injected into any component that needs it:
-//
-//	type UserService struct {
-//	    db db_client.Client
-//	}
-var Component = &component.Component{
-	Init: component.StepFunc(func(container container.Container) error {
+//	var client db_client.Client
+//	container.Invoke(func(c db_client.Client) { client = c })
+//	rows, err := client.Query("SELECT * FROM users")
+var Component = compogo.Component{
+	Init: compogo.StepFunc(func(container compogo.Container) error {
 		return container.Provides(
 			NewConfig,
 			NewClient,
-			func(client client.Client) Client { return client },
 		)
 	}),
-	BindFlags: component.BindFlags(func(flagSet flag.FlagSet, container container.Container) error {
+	BindFlags: compogo.BindFlags(func(flagSet flag.FlagSet, container compogo.Container) error {
 		return container.Invoke(func(config *Config) {
 			allDrivers := drivers.Keys()
 			if len(allDrivers) == 1 {
@@ -47,10 +35,10 @@ var Component = &component.Component{
 			flagSet.StringVar(&config.Driver, DriverFieldName, DriverDefault, fmt.Sprintf("db client driver. Available drivers: [%s]", strings.Join(allDrivers, ",")))
 		})
 	}),
-	Configuration: component.StepFunc(func(container container.Container) error {
+	Configuration: compogo.StepFunc(func(container compogo.Container) error {
 		return container.Invoke(Configuration)
 	}),
-	Stop: component.StepFunc(func(container container.Container) error {
+	Stop: compogo.StepFunc(func(container compogo.Container) error {
 		return container.Invoke(func(c Client) error {
 			return c.Close()
 		})

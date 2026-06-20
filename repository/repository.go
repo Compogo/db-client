@@ -2,49 +2,43 @@ package repository
 
 import "context"
 
-// Pager defines the interface for paginated data retrieval.
-// It returns a slice of items for the requested page, applying sorting and filters.
+// Pager — интерфейс для постраничного получения данных.
 type Pager[T any] interface {
-	// Page returns a paginated list of items.
-	// Parameters:
-	//   - ctx: context for cancellation and timeouts
-	//   - page: pagination parameters (page number and limit)
-	//   - sorts: sorting criteria (may be empty)
-	//   - filters: filtering criteria (may be empty)
-	//
-	// Returns:
-	//   - []T: slice of items for the current page
-	//   - error: any error encountered during the query
-	Page(ctx context.Context, page *Page, sorts []*Sort, filters ...*Filter) ([]T, error)
+	Page(context.Context, *Page, []*Sort, ...*Filter) ([]T, error)
 }
 
-// Counter defines the interface for counting items matching given filters.
+// Counter — интерфейс для подсчёта количества записей.
 type Counter interface {
-	// Count returns the total number of items matching the filters.
-	// This is typically used to calculate the total number of pages
-	// when implementing pagination.
-	//
-	// Parameters:
-	//   - ctx: context for cancellation and timeouts
-	//   - filters: filtering criteria (may be empty)
-	//
-	// Returns:
-	//   - int: total count of matching items
-	//   - error: any error encountered during the query
-	Count(ctx context.Context, filters ...*Filter) (int, error)
+	Count(context.Context, ...*Filter) (uint64, error)
 }
 
-// Repository combines pagination and counting capabilities for a specific entity type.
-// It provides a standard interface for data access operations that can be implemented
-// by different database drivers (PostgreSQL, MySQL, etc.).
-//
-// Example:
-//
-//	type UserRepository interface {
-//	    repository.Repository[User]
-//	    FindByEmail(ctx context.Context, email string) (*User, error)
-//	}
-type Repository[T any] interface {
-	Pager[T]
-	Counter
+// Saver — интерфейс для сохранения сущности.
+// Объединяет Insert и Update, определяя операцию по наличию ID.
+type Saver[T any] interface {
+	Save(context.Context, T) (T, error)
+}
+
+// Inserter — интерфейс для вставки новой сущности.
+type Inserter[T any] interface {
+	Insert(context.Context, T) (T, error)
+}
+
+// Updater — интерфейс для обновления существующей сущности.
+type Updater[T any] interface {
+	Update(context.Context, T) (T, error)
+}
+
+// Deleter — интерфейс для удаления записей по фильтрам.
+type Deleter interface {
+	Delete(context.Context, ...*Filter) error
+}
+
+// Finder — интерфейс для поиска записей по фильтрам.
+type Finder[T any] interface {
+	Find(context.Context, ...*Filter) ([]T, error)
+}
+
+// BulkInserter — интерфейс для массовой вставки сущностей.
+type BulkInserter[T any] interface {
+	BulkInsert(context.Context, ...T) error
 }

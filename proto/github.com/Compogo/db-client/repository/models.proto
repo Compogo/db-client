@@ -9,7 +9,7 @@ import "github.com/Compogo/db-client/repository/sort_direction.proto";
 
 message Page {
   uint64 Number = 1;
-  uint32 Limit = 2;
+  uint64 Limit = 2;
 }
 
 message Sort {
