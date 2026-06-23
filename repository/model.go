@@ -25,11 +25,11 @@ func NewSort(columnName string, direction SortDirection) *Sort {
 // Filter определяет условие фильтрации.
 type Filter struct {
 	ColumnName string
-	Value      string
+	Value      any
 	Comparable Comparable
 }
 
 // NewFilter создаёт новый Filter.
-func NewFilter(columnName string, value string, comparable Comparable) *Filter {
+func NewFilter(columnName string, value any, comparable Comparable) *Filter {
 	return &Filter{ColumnName: columnName, Value: value, Comparable: comparable}
 }

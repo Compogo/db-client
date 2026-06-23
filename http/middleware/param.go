@@ -82,6 +82,8 @@ const (
 
 	// pairSeparator разделитель ключ-значение в элементе
 	pairSeparator = ":"
+
+	comaSeparator = ","
 )
 
 var (
@@ -196,12 +198,17 @@ func NewFilter(logger compogo.Logger, columns ...string) httpServer.Middleware {
 					return nil, fmt.Errorf("[Pagination][Sort] filter invalid column %s", values[0])
 				}
 
-				comparable, err := QueryComparableToComparable.Get(values[2])
+				c, err := QueryComparableToComparable.Get(values[2])
 				if err != nil {
 					return nil, fmt.Errorf("[Pagination][Sort] filter invalid comparable %s", values[2])
 				}
 
-				filters[i] = repository.NewFilter(values[0], values[1], comparable)
+				value := any(values[1])
+				if c == repository.IN {
+					value = strings.Split(values[1], comaSeparator)
+				}
+
+				filters[i] = repository.NewFilter(values[0], value, c)
 			}
 
 			return filters, nil
