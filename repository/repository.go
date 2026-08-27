@@ -35,7 +35,7 @@ type Deleter interface {
 
 // Finder — интерфейс для поиска записей по фильтрам.
 type Finder[T any] interface {
-	Find(context.Context, ...*Filter) ([]T, error)
+	Find(context.Context, []*Sort, ...*Filter) ([]T, error)
 }
 
 // BulkInserter — интерфейс для массовой вставки сущностей.
