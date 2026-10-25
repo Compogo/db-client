@@ -6,7 +6,6 @@ import (
 
 	"github.com/Compogo/compogo"
 	"github.com/Compogo/db-client/repository"
-	httpServer "github.com/Compogo/http_server"
 	"github.com/Compogo/http_server/middleware/param"
 	"github.com/Compogo/types/linker"
 	"github.com/Compogo/types/set"
@@ -128,7 +127,7 @@ var (
 
 // NewSort создаёт middleware для извлечения сортировки из запроса.
 // Поддерживает формат: "column:asc;column2:desc"
-func NewSort(logger compogo.Logger, defaultSort *repository.Sort, columns ...string) httpServer.Middleware {
+func NewSort(logger compogo.Logger, defaultSort *repository.Sort, columns ...string) *param.Param {
 	allowedColumns := set.NewSet[string](columns...)
 
 	return param.NewParam(
@@ -172,7 +171,7 @@ func NewSort(logger compogo.Logger, defaultSort *repository.Sort, columns ...str
 
 // NewFilter создаёт middleware для извлечения фильтров из запроса.
 // Поддерживает формат: "column:value:EQ;column2:value2:LIKE"
-func NewFilter(logger compogo.Logger, columns ...string) httpServer.Middleware {
+func NewFilter(logger compogo.Logger, columns ...string) *param.Param {
 	allowedColumns := set.NewSet[string](columns...)
 
 	return param.NewParam(
@@ -220,7 +219,7 @@ func NewFilter(logger compogo.Logger, columns ...string) httpServer.Middleware {
 }
 
 // NewPage создаёт middleware для извлечения номера страницы из запроса.
-func NewPage(logger compogo.Logger) httpServer.Middleware {
+func NewPage(logger compogo.Logger) *param.Param {
 	return param.NewParamUint64(
 		PageFieldName,
 		logger,
@@ -232,7 +231,7 @@ func NewPage(logger compogo.Logger) httpServer.Middleware {
 }
 
 // NewPaginationLimit создаёт middleware для извлечения лимита из запроса.
-func NewPaginationLimit(logger compogo.Logger) httpServer.Middleware {
+func NewPaginationLimit(logger compogo.Logger) *param.Param {
 	return param.NewParamUint64(
 		LimitFieldName,
 		logger,
