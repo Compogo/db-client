@@ -42,3 +42,7 @@ type Finder[T any] interface {
 type BulkInserter[T any] interface {
 	BulkInsert(context.Context, ...*T) error
 }
+
+type BulkUpdater interface {
+	BulkUpdate(context.Context, map[string]any, ...*Filter) error
+}
